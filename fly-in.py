@@ -1,6 +1,6 @@
 from sys import argv
 from parser import Parser
-from models import ValidationError
+from pydantic import ValidationError
 
 
 def main():

@@ -9,6 +9,8 @@ class Parser():
             connections = []
             zones = {}
             drone_counter = 0
+            start_hub = None
+            end_hub = None
 
             for line in file:
                 line = line.strip()
@@ -25,6 +27,8 @@ class Parser():
                         end_hub = result
                 elif isinstance(result, Connection):
                     connections.append(result)
+            if not start_hub or not end_hub:
+                raise ValueError("Missing start_hub or end_hub")
             graph = Graph(zones=zones, connections=connections, drone_counter=drone_counter, start_hub=start_hub, end_hub=end_hub)
             return graph
 
@@ -33,14 +37,14 @@ class Parser():
         meta_dict = {}
         if line.startswith("nb_drones"):
             return int(line.split(":")[1].strip())
-        if line.startswith("start_hub") or line.startswith("hub"):
+        if line.startswith("start_hub") or line.startswith("end_hub") or line.startswith("hub"):
             prefix, rest = line.split(":")
+            meta = ""
             if "[" in rest:
                 main, meta = rest.split("[")
                 meta = meta.strip("]")
             else:
                 main = rest
-                _meta_str = ""
             parts = main.split()
             name = parts[0]
             x = int(parts[1])
@@ -50,7 +54,7 @@ class Parser():
                 key, value = item.split("=")
                 meta_dict[key] = value
             
-            return Zone(hub_type=prefix, name=name, x=x, y=y, color=meta_dict.get("color", None), max_drones=meta_dict.get("max_drones", 1))
+            return Zone(hub_type=prefix, name=name, x=x, y=y, color=meta_dict.get("color", None), max_drones=int(meta_dict.get("max_drones", 1)))
         
         if line.startswith("connection"):
             _, rest = line.split(":", 1)
@@ -65,9 +69,9 @@ class Parser():
                 main = rest
                 capacity = 1
 
-                try:
-                    zone1, zone2 = main.strip().split("-")
-                except Exception:
-                    raise ValueError("connection name cannot contain '-' characters")
+            try:
+                zone1, zone2 = main.strip().split("-")
+            except Exception:
+                raise ValueError("connection name cannot contain '-' characters")
             
             return Connection(zone1=zone1, zone2=zone2, max_link_capacity=capacity)
