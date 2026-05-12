@@ -34,6 +34,12 @@ class Parser():
 
     @staticmethod
     def parse_line(line):
+        ZONE_COLORS = {
+            "normal": "white",
+            "restricted": "red",
+            "priority": "green",
+            "blocked": "gray"
+        }
         meta_dict = {}
         if line.startswith("nb_drones"):
             return int(line.split(":")[1].strip())
@@ -54,7 +60,15 @@ class Parser():
                 key, value = item.split("=")
                 meta_dict[key] = value
             
-            return Zone(hub_type=prefix, name=name, x=x, y=y, color=meta_dict.get("color", None), max_drones=int(meta_dict.get("max_drones", 1)))
+            return Zone(
+                hub_type=prefix,
+                name=name,
+                x=x, y=y,
+                zone_type=meta_dict.get("zone", "normal"),
+                color=meta_dict.get("color", ZONE_COLORS.get(
+                meta_dict.get("zone", "normal")
+                )),
+                max_drones=int(meta_dict.get("max_drones", 1)))
         
         if line.startswith("connection"):
             _, rest = line.split(":", 1)
@@ -70,7 +84,7 @@ class Parser():
                 capacity = 1
 
             try:
-                zone1, zone2 = main.strip().split("-")
+                zone1, zone2 = main.strip().split("-", 1)
             except Exception:
                 raise ValueError("connection name cannot contain '-' characters")
             

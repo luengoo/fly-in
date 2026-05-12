@@ -1,7 +1,7 @@
 VENV = env
 PYTHON = $(VENV)/bin/python3
 PIP = $(VENV)/bin/pip
-MAP = 01_linear_path.txt
+MAP = example_map.txt
 
 all:
 	clear

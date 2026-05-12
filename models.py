@@ -1,5 +1,6 @@
 from pydantic import BaseModel, model_validator, Field
 import heapq
+from colors import Colors
 
 class Zone(BaseModel):
     name: str
@@ -61,7 +62,12 @@ class Graph(BaseModel):
         starting_hub = self.start_hub
         for drone in self.drones:
             drone.position = starting_hub.name
-            print(f"Drone: {drone.ID} starting in position: {drone.position}")
+            zone = self.zones[drone.position]
+
+            Colors.print(
+                f"Drone: {drone.ID} starting in position: {drone.position}",
+                zone.color
+            )
 
     def get_neighbors(self, zone) -> list[Zone]:
         neighbors = []
@@ -75,8 +81,17 @@ class Graph(BaseModel):
     def simulate(self):
         self.create_drones()
         path, cost = self.dijkstra()
-        print(f"Best path: {path}")
-        print(f"Total cost: {cost}")
+        print("\nBest path:\n")
+
+        for zone_name in path:
+            zone = self.zones[zone_name]
+
+            Colors.print(
+                f"{zone.name} ({zone.zone_type})",
+                zone.color
+            )
+
+        print(f"\nTotal cost: {cost}")
 
     @staticmethod
     def calculate_movement_cost(from_zone: Zone, to_zone: Zone) -> int:
@@ -85,7 +100,7 @@ class Graph(BaseModel):
         
         dx = to_zone.x - from_zone.x
         dy = to_zone.y - from_zone.y
-        distance = (dx + dy)
+        distance = abs(dx) + abs(dy)
         penalty = 0
         if to_zone.zone_type == "restricted":
             penalty = 2
