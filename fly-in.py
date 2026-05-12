@@ -1,6 +1,7 @@
 from sys import argv
 from parser import Parser
 from pydantic import ValidationError
+from simulation import simulate
 
 
 def main():
@@ -11,7 +12,7 @@ def main():
     else:
         try:
             graph = Parser(argv[1]).parse()
-            graph.simulate()
+            simulate(graph)
 
         except (ValueError, ValidationError) as e:
             if isinstance(e, ValidationError):

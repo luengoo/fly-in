@@ -1,5 +1,4 @@
 from pydantic import BaseModel, model_validator, Field
-import heapq
 from colors import Colors
 
 class Zone(BaseModel):
@@ -50,6 +49,8 @@ class Graph(BaseModel):
     drones: list[Drone] = Field(default_factory=list, exclude=True)
     start_hub: Zone
     end_hub: Zone
+    zone_occupancy: int = Field(default=0)
+    link_usage: int = Field(default=0)
 
     @model_validator(mode="after")
     def validate_graph(self):
