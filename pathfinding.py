@@ -28,7 +28,7 @@ def calculate_movement_cost(from_zone: Zone, to_zone: Zone) -> int:
 
 def dijkstra_for_drone(graph, drone):
 
-    start = graph.start_hub.name
+    start = drone.position
     end = graph.end_hub.name
 
     visited = set()

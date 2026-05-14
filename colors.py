@@ -15,7 +15,8 @@ class Colors:
             "error":Fore.RED + Style.BRIGHT,
             "success":Fore.GREEN + Style.BRIGHT,
             "warning":Fore.YELLOW + Style.BRIGHT,
-            "info":Fore.CYAN + Style.BRIGHT
+            "info":Fore.CYAN + Style.BRIGHT,
+            "orange":"\033[38;5;208m"
         }
 
         @classmethod

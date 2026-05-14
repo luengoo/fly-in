@@ -38,6 +38,7 @@ class Drone():
         self.path_index = 0
         self.finished = False
         self.waiting = False
+        self.active = False
 
 class Graph(BaseModel):
     model_config = {
@@ -49,8 +50,9 @@ class Graph(BaseModel):
     drones: list[Drone] = Field(default_factory=list, exclude=True)
     start_hub: Zone
     end_hub: Zone
-    zone_occupancy: int = Field(default=0)
-    link_usage: int = Field(default=0)
+    zone_occupancy: dict = Field(default_factory=dict, exclude=True)
+    link_usage: dict = Field(default_factory=dict, exclude=True)
+    connection_map: dict = Field(default_factory=dict, exclude=True)
 
     @model_validator(mode="after")
     def validate_graph(self):
