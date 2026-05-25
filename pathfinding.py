@@ -38,7 +38,8 @@ def dijkstra(graph, start, end):
             link = graph.connection_map.get(edge)
             link_penalty = 0
 
-            if link and graph.link_usage.get(edge, 0) >= link.max_link_capacity:
+            if link and graph.link_usage.get(
+              edge, 0) >= link.max_link_capacity:
                 link_penalty = 100
 
             new_cost = cost + move_cost + occupancy_penalty + link_penalty

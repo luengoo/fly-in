@@ -12,7 +12,8 @@ class Zone(BaseModel):
 
     @model_validator(mode="after")
     def validate(self):
-        if self.zone_type not in {"normal", "blocked", "restricted", "priority"}:
+        if self.zone_type not in {
+          "normal", "blocked", "restricted", "priority"}:
             raise ValueError("Invalid zone_type")
         if self.max_drones < 0:
             raise ValueError("max_drones must be >= 0")
@@ -53,9 +54,11 @@ class Graph(BaseModel):
     end_hub: Zone
     drones: list[Drone] = Field(default_factory=list, exclude=True)
     adjacency: dict[str, list[str]] = Field(default_factory=dict, exclude=True)
-    connection_map: dict[tuple[str, str], Connection] = Field(default_factory=dict, exclude=True)
+    connection_map: dict[tuple[str, str], Connection] = Field(
+        default_factory=dict, exclude=True)
     zone_occupancy: dict[str, int] = Field(default_factory=dict, exclude=True)
-    link_usage: dict[tuple[str, str], int] = Field(default_factory=dict, exclude=True)
+    link_usage: dict[tuple[str, str], int] = Field(
+        default_factory=dict, exclude=True)
 
     @model_validator(mode="after")
     def validate(self):

@@ -92,7 +92,8 @@ class Parser:
                 x=x,
                 y=y,
                 zone_type=zone_type,
-                color=meta_dict.get("color", ZONE_COLORS.get(zone_type, "white")),
+                color=meta_dict.get(
+                    "color", ZONE_COLORS.get(zone_type, "white")),
                 max_drones=int(meta_dict.get("max_drones", 1))
             )
 
@@ -112,7 +113,8 @@ class Parser:
             try:
                 zone1, zone2 = main.strip().split("-", 1)
             except ValueError:
-                raise ValueError("connection name cannot contain '-' characters")
+                raise ValueError(
+                    "connection name cannot contain '-' characters")
 
             return Connection(
                 zone1=zone1,

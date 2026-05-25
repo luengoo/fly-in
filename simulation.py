@@ -34,7 +34,8 @@ def simulate(graph):
                     d.position = d.target_zone
                     d.path_index += 1
                     logs.append(
-                        (d, f"arrived at {d.position}", graph.zones[d.position].color)
+                        (d, f"arrived at {d.position}",
+                         graph.zones[d.position].color)
                     )
                 continue
 
@@ -51,7 +52,8 @@ def simulate(graph):
                 logs.append((d, f"WAITING at {cur}", "yellow"))
                 continue
 
-            if graph.link_usage.get(edge, 0) >= graph.connection_map[edge].max_link_capacity:
+            if graph.link_usage.get(
+              edge, 0) >= graph.connection_map[edge].max_link_capacity:
                 logs.append((d, f"WAITING at {cur}", "yellow"))
                 continue
 
@@ -68,7 +70,9 @@ def simulate(graph):
             else:
                 d.position = nxt
                 d.path_index += 1
-                logs.append((d, f"moved to {nxt} ({graph.zones[nxt].zone_type})", graph.zones[nxt].color))
+                logs.append(
+                    (d, f"moved to {nxt} ({graph.zones[nxt].zone_type})",
+                     graph.zones[nxt].color))
 
         for drone, msg, color in logs:
             Colors.print(f"{drone.id} {msg}", color)
