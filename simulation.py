@@ -1,14 +1,25 @@
 from pathfinding import dijkstra
 from colors import Colors
+from itertools import cycle
 
 
 def simulate(graph):
 
     graph.build()
     graph.create_drones()
+    different_paths = []
 
+    while True:
+        path = dijkstra(graph, graph.start_hub.name,
+                        graph.end_hub.name,
+                        previous_paths=different_paths)
+        if path in different_paths:
+            break
+        different_paths.append(path)
+
+    paths_cycle = cycle(different_paths)
     for d in graph.drones:
-        d.path = dijkstra(graph, d.position, graph.end_hub.name)
+        d.path = next(paths_cycle)
 
     turn = 0
 
@@ -16,8 +27,6 @@ def simulate(graph):
 
         turn += 1
         graph.link_usage.clear()
-
-        print(f"\n======== TURN {turn} ========")
 
         logs = []
 
@@ -74,5 +83,7 @@ def simulate(graph):
                     (d, f"moved to {nxt} ({graph.zones[nxt].zone_type})",
                      graph.zones[nxt].color))
 
+        if logs:
+            print(f"\n======== TURN {turn} ========")
         for drone, msg, color in logs:
             Colors.print(f"{drone.id} {msg}", color)

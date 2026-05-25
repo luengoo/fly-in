@@ -1,7 +1,15 @@
 import heapq
+from collections import Counter
 
 
-def dijkstra(graph, start, end):
+def dijkstra(graph, start, end, previous_paths):
+
+    edge_frequency = Counter()
+
+    for path in previous_paths:
+        for i in range(len(path) - 1):
+            edge = tuple(sorted((path[i], path[i + 1])))
+            edge_frequency[edge] += 1
 
     dist = {z: float("inf") for z in graph.zones}
     prev = {z: None for z in graph.zones}
@@ -30,11 +38,14 @@ def dijkstra(graph, start, end):
             if graph.zones[nxt].zone_type == "restricted":
                 move_cost += 2
             elif graph.zones[nxt].zone_type == "priority":
-                move_cost -= 0.5
+                move_cost *= 0.8
 
             occupancy_penalty = graph.zone_occupancy[nxt] ** 2
 
             edge = tuple(sorted((node, nxt)))
+
+            visited_penalty = edge_frequency[edge] * 5
+
             link = graph.connection_map.get(edge)
             link_penalty = 0
 
@@ -42,7 +53,13 @@ def dijkstra(graph, start, end):
               edge, 0) >= link.max_link_capacity:
                 link_penalty = 100
 
-            new_cost = cost + move_cost + occupancy_penalty + link_penalty
+            new_cost = (
+                cost
+                + move_cost
+                + occupancy_penalty
+                + link_penalty
+                + visited_penalty
+                )
 
             if new_cost < dist[nxt]:
                 dist[nxt] = new_cost
@@ -51,8 +68,13 @@ def dijkstra(graph, start, end):
 
     path = []
     cur = end
-    while cur:
+    while cur is not None:
         path.append(cur)
         cur = prev[cur]
 
-    return list(reversed(path))
+    path.reverse()
+
+    if path[0] != start:
+        return None
+
+    return path

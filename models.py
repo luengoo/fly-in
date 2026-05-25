@@ -15,6 +15,8 @@ class Zone(BaseModel):
         if self.zone_type not in {
           "normal", "blocked", "restricted", "priority"}:
             raise ValueError("Invalid zone_type")
+        if self.name == "goal":
+            self.max_drones = 42222222
         if self.max_drones < 0:
             raise ValueError("max_drones must be >= 0")
         return self
