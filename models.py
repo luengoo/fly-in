@@ -1,5 +1,5 @@
 from pydantic import BaseModel, model_validator, Field
-from typing import TypeVar
+from typing import TypeVar, Literal
 
 
 Z = TypeVar("Z", bound="Zone")
@@ -8,29 +8,33 @@ G = TypeVar("G", bound="Graph")
 
 
 class Zone(BaseModel):
+    model_config = {"frozen": True}
+
     name: str
     x: int
     y: int
     zone_type: str = "normal"
     color: str
     max_drones: int = 1
-    hub_type: str
+    hub_type: Literal[
+        "hub",
+        "start_hub",
+        "end_hub"
+    ]
 
     @model_validator(mode="after")
     def validation(self: Z) -> Z:
         if self.zone_type not in {
           "normal", "blocked", "restricted", "priority"}:
             raise ValueError("Invalid zone_type")
-        if self.name == "goal":
-            self.max_drones = 42222222
         if self.max_drones < 0:
             raise ValueError("max_drones must be >= 0")
         return self
 
 
 class Connection(BaseModel):
-    zone1: str
-    zone2: str
+    zone1: Zone = None
+    zone2: Zone = None
     max_link_capacity: int = 1
 
     @model_validator(mode="after")
@@ -39,17 +43,22 @@ class Connection(BaseModel):
             raise ValueError("invalid capacity")
         return self
 
+    def key(self):
+        return frozenset((self.zone1, self.zone2))
 
 class Drone:
     def __init__(self, drone_id: str):
         self.id = drone_id
-        self.position: str
-        self.path: list = []
+        self.zone: Zone | None = None
+        self.connection: Connection | None = None
+        self.path: list[Zone] = []
         self.path_index = 0
         self.finished = False
-        self.in_transit = False
-        self.remaining_turns = 0
-        self.target_zone: str
+        self.in_transit: bool = False
+        self.remaining_turns: int = 0
+        self.target_zone: Zone | None = None
+        self.buffer_zone: Zone | None = None
+        self.buffer_edge: Zone | None = None
 
 
 class Graph(BaseModel):
@@ -61,11 +70,13 @@ class Graph(BaseModel):
     start_hub: Zone
     end_hub: Zone
     drones: list[Drone] = Field(default_factory=list, exclude=True)
-    adjacency: dict[str, list[str]] = Field(default_factory=dict, exclude=True)
-    connection_map: dict[tuple[str, str], Connection] = Field(
+    adjacency: dict[Zone, list[Zone]] = Field(default_factory=dict, exclude=True)
+    connection_map: dict[frozenset[Zone], Connection] = Field(
         default_factory=dict, exclude=True)
-    zone_occupancy: dict[str, int] = Field(default_factory=dict, exclude=True)
-    link_usage: dict[tuple[str, str], int] = Field(
+    zone_occupancy: dict[Zone, int] = Field(default_factory=dict, exclude=True)
+    link_usage: dict[frozenset[Zone], int] = Field(
+        default_factory=dict, exclude=True)
+    restricted_buffer: dict[frozenset[Zone], int] = Field(
         default_factory=dict, exclude=True)
 
     @model_validator(mode="after")
@@ -75,23 +86,30 @@ class Graph(BaseModel):
         return self
 
     def build(self) -> None:
-        self.adjacency = {z: [] for z in self.zones}
-
+        self.adjacency = {z: [] for z in self.zones.values()}
         self.connection_map = {}
         for c in self.connections:
             self.adjacency[c.zone1].append(c.zone2)
             self.adjacency[c.zone2].append(c.zone1)
-
-            key = (min(c.zone1, c.zone2), max(c.zone1, c.zone2))
-            self.connection_map[key] = c
-
-        self.zone_occupancy = {z: 0 for z in self.zones}
+            self.connection_map[c.key()] = c
+        self.zone_occupancy = {
+            z: 0 for z in self.zones.values()
+        }
         self.link_usage = {}
+
+    def create_connections(self, name1: str, name2: str, capacity) -> Connection:
+        return Connection(
+            zone1_name = name1,
+            zone2_name = name2,
+            zone1 = self.zones.get(name1),
+            zone2 = self.zones.get(name2),
+            max_link_capacity=capacity
+        )
 
     def create_drones(self) -> None:
         self.drones = []
         for i in range(1, self.drone_counter + 1):
             d = Drone(f"D{i}")
-            d.position = self.start_hub.name
+            d.zone = self.start_hub
+            self.zone_occupancy[d.zone] += 1
             self.drones.append(d)
-            self.zone_occupancy[d.position] += 1

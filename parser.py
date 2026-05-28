@@ -6,7 +6,7 @@ class Parser:
         self.filename = filename
 
     def parse(self) -> Graph:
-        connections = []
+        pending_connections = []
         zones = {}
         drone_counter = 0
         start_hub = None
@@ -32,11 +32,26 @@ class Parser:
                     elif result.hub_type == "end_hub":
                         end_hub = result
 
-                elif isinstance(result, Connection):
-                    connections.append(result)
+                else:
+                    pending_connections.append(result)
 
         if start_hub is None or end_hub is None:
             raise ValueError("Missing start_hub or end_hub")
+
+        connections = []
+
+        for zone1_name, zone2_name, capacity in pending_connections:
+            zone1 = zones.get(zone1_name)
+            zone2 = zones.get(zone2_name)
+            if not zone1 or not zone2:
+                raise ValueError("Invalid connection")
+            connections.append(
+                Connection(
+                    zone1=zone1,
+                    zone2=zone2,
+                    max_link_capacity=capacity
+                )
+            )
 
         graph = Graph(
             zones=zones,
@@ -116,9 +131,5 @@ class Parser:
                 raise ValueError(
                     "connection name cannot contain '-' characters")
 
-            return Connection(
-                zone1=zone1,
-                zone2=zone2,
-                max_link_capacity=capacity
-            )
+            return (zone1, zone2, capacity)
         return None

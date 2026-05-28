@@ -1,28 +1,29 @@
 import heapq
 from collections import Counter
-from models import Graph
+from models import Graph, Zone
 
 
 def dijkstra(graph: Graph,
-             start: str,
-             end: str,
-             previous_paths: list[list[str]]) -> list[str] | None:
+             start: Zone,
+             end: Zone,
+             previous_paths: list[list[Zone]]) -> list[Zone] | None:
 
     edge_frequency: Counter = Counter()
 
     for path in previous_paths:
         for i in range(len(path) - 1):
-            edge = (min(path[i], path[i + 1]),
-                    max(path[i], path[i + 1]))
+            edge = frozenset((path[i], path[i + 1]))
             edge_frequency[edge] += 1
 
-    dist = {z: float("inf") for z in graph.zones}
-    prev: dict[str, str | None] = {z: None for z in graph.zones}
+    dist = {
+        z: float("inf")
+        for z in graph.zones.values()
+    }
+    prev: dict[str, str | None] = {z: None for z in graph.zones.values()}
     dist[start] = 0
-    pq = [(0, start)]
-
+    pq = [(0, start.name, start)]
     while pq:
-        cost, node = heapq.heappop(pq)
+        cost, _, node = heapq.heappop(pq)
 
         if cost > dist[node]:
             continue
@@ -32,21 +33,21 @@ def dijkstra(graph: Graph,
 
         for nxt in graph.adjacency[node]:
 
-            if graph.zones[nxt].zone_type == "blocked":
+            if nxt.zone_type == "blocked":
                 continue
 
-            dx = graph.zones[nxt].x - graph.zones[node].x
-            dy = graph.zones[nxt].y - graph.zones[node].y
+            dx = nxt.x - node.x
+            dy = nxt.y - node.y
             move_cost = abs(dx) + abs(dy)
 
-            if graph.zones[nxt].zone_type == "restricted":
+            if nxt.zone_type == "restricted":
                 move_cost += 2
-            elif graph.zones[nxt].zone_type == "priority":
+            elif nxt.zone_type == "priority":
                 move_cost -= 1
 
             occupancy_penalty = graph.zone_occupancy[nxt] ** 2
 
-            edge = (min(node, nxt), max(node, nxt))
+            edge = frozenset((node,nxt))
 
             visited_penalty = edge_frequency[edge] * 5
 
@@ -68,7 +69,7 @@ def dijkstra(graph: Graph,
             if new_cost < dist[nxt]:
                 dist[nxt] = new_cost
                 prev[nxt] = node
-                heapq.heappush(pq, (new_cost, nxt))
+                heapq.heappush(pq, (new_cost, nxt.name, nxt))
 
     path = []
     cur: str | None = end
