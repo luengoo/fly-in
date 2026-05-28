@@ -22,7 +22,8 @@ clean:
 	rm -rf .mypy_cache
 
 lint:
-	python3 -m flake8 . && python3 -m mypy . --warn-return-any \
+	python3 -m flake8 . --exclude=env && \
+	python3 -m mypy . --exclude=env --warn-return-any \
 	--warn-unused-ignores --ignore-missing-imports \
 	--disallow-untyped-defs --check-untyped-defs
 
