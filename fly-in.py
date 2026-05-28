@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from simulation import simulate
 
 
-def main():
+def main() -> None:
 
     if len(argv) != 2 or not argv[1].endswith(".txt"):
         print("Usage: python3 fly-in.py input.txt")

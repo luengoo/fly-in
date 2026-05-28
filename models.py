@@ -1,4 +1,10 @@
 from pydantic import BaseModel, model_validator, Field
+from typing import TypeVar
+
+
+Z = TypeVar("Z", bound="Zone")
+C = TypeVar("C", bound="Connection")
+G = TypeVar("G", bound="Graph")
 
 
 class Zone(BaseModel):
@@ -6,12 +12,12 @@ class Zone(BaseModel):
     x: int
     y: int
     zone_type: str = "normal"
-    color: str | None = None
+    color: str
     max_drones: int = 1
     hub_type: str
 
     @model_validator(mode="after")
-    def validate(self):
+    def validation(self: Z) -> Z:
         if self.zone_type not in {
           "normal", "blocked", "restricted", "priority"}:
             raise ValueError("Invalid zone_type")
@@ -28,7 +34,7 @@ class Connection(BaseModel):
     max_link_capacity: int = 1
 
     @model_validator(mode="after")
-    def validate(self):
+    def validation(self: C) -> C:
         if self.max_link_capacity < 0:
             raise ValueError("invalid capacity")
         return self
@@ -37,13 +43,13 @@ class Connection(BaseModel):
 class Drone:
     def __init__(self, drone_id: str):
         self.id = drone_id
-        self.position = None
-        self.path = []
+        self.position: str
+        self.path: list = []
         self.path_index = 0
         self.finished = False
         self.in_transit = False
         self.remaining_turns = 0
-        self.target_zone = None
+        self.target_zone: str
 
 
 class Graph(BaseModel):
@@ -63,24 +69,26 @@ class Graph(BaseModel):
         default_factory=dict, exclude=True)
 
     @model_validator(mode="after")
-    def validate(self):
+    def validation(self: G) -> G:
         if self.drone_counter <= 0:
             raise ValueError("drone_counter must be > 0")
         return self
 
-    def build(self):
+    def build(self) -> None:
         self.adjacency = {z: [] for z in self.zones}
 
         self.connection_map = {}
         for c in self.connections:
             self.adjacency[c.zone1].append(c.zone2)
             self.adjacency[c.zone2].append(c.zone1)
-            self.connection_map[tuple(sorted((c.zone1, c.zone2)))] = c
+
+            key = (min(c.zone1, c.zone2), max(c.zone1, c.zone2))
+            self.connection_map[key] = c
 
         self.zone_occupancy = {z: 0 for z in self.zones}
         self.link_usage = {}
 
-    def create_drones(self):
+    def create_drones(self) -> None:
         self.drones = []
         for i in range(1, self.drone_counter + 1):
             d = Drone(f"D{i}")

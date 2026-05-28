@@ -2,10 +2,10 @@ from models import Zone, Connection, Graph
 
 
 class Parser:
-    def __init__(self, filename):
+    def __init__(self, filename: str):
         self.filename = filename
 
-    def parse(self):
+    def parse(self) -> Graph:
         connections = []
         zones = {}
         drone_counter = 0
@@ -51,7 +51,7 @@ class Parser:
         return graph
 
     @staticmethod
-    def parse_line(line):
+    def parse_line(line: str) -> Connection | int | Zone | None:
         ZONE_COLORS = {
             "normal": "white",
             "restricted": "red",
@@ -121,3 +121,4 @@ class Parser:
                 zone2=zone2,
                 max_link_capacity=capacity
             )
+        return None

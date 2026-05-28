@@ -29,13 +29,13 @@ class Colors:
         }
 
     @classmethod
-    def get(cls, color_name: str):
+    def get(cls, color_name: str) -> str:
         if not color_name:
             return Fore.WHITE
         return cls.colors_dict.get(color_name.lower(), Fore.WHITE)
 
     @classmethod
-    def print(cls, text: str, color_name: str):
+    def print(cls, text: str, color_name: str) -> None:
         rainbow_colors = [
                 Fore.RED,
                 Fore.YELLOW,

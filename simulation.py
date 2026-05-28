@@ -1,13 +1,14 @@
 from pathfinding import dijkstra
 from colors import Colors
 from itertools import cycle
+from models import Graph
 
 
-def simulate(graph):
+def simulate(graph: Graph) -> None:
 
     graph.build()
     graph.create_drones()
-    different_paths = []
+    different_paths: list = []
 
     while True:
         path = dijkstra(graph, graph.start_hub.name,

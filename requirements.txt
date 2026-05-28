@@ -1,2 +1,5 @@
 pydantic
 colorama
+flake8
+mypy
+types-colorama
