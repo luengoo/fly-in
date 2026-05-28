@@ -1,4 +1,4 @@
-from colorama import Fore, init, Style
+from colorama import Fore, init, Style, Back
 
 init(autoreset=True)
 
@@ -7,7 +7,7 @@ class Colors:
 
     colors_dict = {
                 "red": Fore.RED,
-                "black": Fore.BLACK,
+                "black": Fore.BLACK + Back.WHITE,
                 "blue": Fore.BLUE,
                 "cyan": Fore.CYAN,
                 "green": Fore.GREEN,
@@ -23,7 +23,7 @@ class Colors:
                 "brown": "\033[33m",
                 "maroon": Fore.RED + Fore.BLACK,
                 "gold": Fore.YELLOW + Fore.BLACK,
-                "darkred": Fore.BLACK + Style.BRIGHT,
+                "darkred": Fore.BLACK + Style.BRIGHT + Back.WHITE,
                 "crimson": Fore.RED + Style.BRIGHT,
                 "violet": Fore.MAGENTA + Style.BRIGHT
         }

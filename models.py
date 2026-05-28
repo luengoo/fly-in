@@ -59,6 +59,7 @@ class Drone:
         self.target_zone: Zone | None = None
         self.buffer_zone: Zone | None = None
         self.buffer_edge: Zone | None = None
+        self.just_arrived: bool = False
 
 
 class Graph(BaseModel):
