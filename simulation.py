@@ -43,16 +43,16 @@ def simulate(graph: Graph) -> None:
                 graph.zone_occupancy[d.zone] += 1
 
                 d.in_transit = False
-                d.target_zone = None
                 d.buffer_zone = None
                 d.buffer_edge = None
                 d.path_index += 1
                 d.just_arrived = True
                 logs.append(
-                    (d, f"arrived to restricted zone {d.zone.name}", d.zone.color)
+                    (d, f"arrived to restricted zone {d.zone.name}",
+                     d.zone.color)
                 )
             continue
-        
+
         for d in graph.drones:
             if d.finished or d.in_transit or getattr(d, "just_arrived", False):
                 continue
@@ -66,8 +66,10 @@ def simulate(graph: Graph) -> None:
             edge = frozenset((cur, nxt))
             conn = graph.connection_map.get(edge)
 
-            if nxt.zone_type in {"normal", "priority"} or nxt.hub_type == "end_hub":
-                if nxt.hub_type == "end_hub" or graph.zone_occupancy.get(nxt, 0) < nxt.max_drones:
+            if nxt.zone_type in {
+              "normal", "priority"} or nxt.hub_type == "end_hub":
+                if nxt.hub_type == "end_hub" or graph.zone_occupancy.get(
+                  nxt, 0) < nxt.max_drones:
                     graph.zone_occupancy[cur] -= 1
                     if nxt.hub_type != "end_hub":
                         graph.zone_occupancy[nxt] += 1
@@ -85,7 +87,8 @@ def simulate(graph: Graph) -> None:
                     continue
 
                 if graph.link_usage.get(edge, 0) >= conn.max_link_capacity:
-                    logs.append((d, f"waiting at {cur.name} (connection full)", "warning"))
+                    logs.append((d, f"waiting at {cur.name} (connection full)",
+                                 "warning"))
                     continue
 
                 graph.link_usage[edge] = graph.link_usage.get(edge, 0) + 1
@@ -97,7 +100,9 @@ def simulate(graph: Graph) -> None:
                 d.buffer_zone = cur
                 d.buffer_edge = edge
 
-                logs.append((d, f"entering buffer to restricted zone {nxt.name}", "magenta"))
+                logs.append((d,
+                             f"entering buffer to restricted zone {nxt.name}",
+                             "magenta"))
         for d in graph.drones:
             d.just_arrived = False
         if logs:

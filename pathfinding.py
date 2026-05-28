@@ -19,7 +19,7 @@ def dijkstra(graph: Graph,
         z: float("inf")
         for z in graph.zones.values()
     }
-    prev: dict[str, str | None] = {z: None for z in graph.zones.values()}
+    prev: dict[Zone, Zone | None] = {z: None for z in graph.zones.values()}
     dist[start] = 0
     pq = [(0, start.name, start)]
     while pq:
@@ -47,7 +47,7 @@ def dijkstra(graph: Graph,
 
             occupancy_penalty = graph.zone_occupancy[nxt] ** 2
 
-            edge = frozenset((node,nxt))
+            edge = frozenset((node, nxt))
 
             visited_penalty = edge_frequency[edge] * 5
 
@@ -72,7 +72,7 @@ def dijkstra(graph: Graph,
                 heapq.heappush(pq, (new_cost, nxt.name, nxt))
 
     path = []
-    cur: str | None = end
+    cur: Zone | None = end
     while cur is not None:
         path.append(cur)
         cur = prev[cur]

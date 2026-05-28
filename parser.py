@@ -1,4 +1,5 @@
 from models import Zone, Connection, Graph
+from typing import cast, Literal
 
 
 class Parser:
@@ -6,7 +7,7 @@ class Parser:
         self.filename = filename
 
     def parse(self) -> Graph:
-        pending_connections = []
+        pending_connections: list[tuple[str, str, int]] = []
         zones = {}
         drone_counter = 0
         start_hub = None
@@ -33,7 +34,8 @@ class Parser:
                         end_hub = result
 
                 else:
-                    pending_connections.append(result)
+                    pending_connections.append(cast(
+                        tuple[str, str, int], result))
 
         if start_hub is None or end_hub is None:
             raise ValueError("Missing start_hub or end_hub")
@@ -66,7 +68,7 @@ class Parser:
         return graph
 
     @staticmethod
-    def parse_line(line: str) -> Connection | int | Zone | None:
+    def parse_line(line: str) -> tuple[str, str, int] | int | Zone | None:
         ZONE_COLORS = {
             "normal": "white",
             "restricted": "red",
@@ -82,12 +84,15 @@ class Parser:
         if line.startswith(("start_hub", "end_hub", "hub")):
             prefix, rest = line.split(":", 1)
 
-            meta = ""
+            main: str
+            meta: str = ""
             if "[" in rest:
-                main, meta = rest.split("[", 1)
-                meta = meta.strip("]")
+                parts: list[str] = rest.split("[", 1)
+                main = parts[0]
+                meta = parts[1].strip("]")
             else:
                 main = rest
+                meta = ""
 
             parts = main.split()
             name = parts[0]
@@ -100,9 +105,9 @@ class Parser:
                     meta_dict[key] = value
 
             zone_type = meta_dict.get("zone", "normal")
-
+            hub_type = cast(Literal["hub", "start_hub", "end_hub"], prefix)
             return Zone(
-                hub_type=prefix,
+                hub_type=hub_type,
                 name=name,
                 x=x,
                 y=y,
@@ -126,6 +131,8 @@ class Parser:
                 main = rest
 
             try:
+                zone1: str
+                zone2: str
                 zone1, zone2 = main.strip().split("-", 1)
             except ValueError:
                 raise ValueError(

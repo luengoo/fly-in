@@ -33,8 +33,8 @@ class Zone(BaseModel):
 
 
 class Connection(BaseModel):
-    zone1: Zone = None
-    zone2: Zone = None
+    zone1: Zone
+    zone2: Zone
     max_link_capacity: int = 1
 
     @model_validator(mode="after")
@@ -43,22 +43,23 @@ class Connection(BaseModel):
             raise ValueError("invalid capacity")
         return self
 
-    def key(self):
+    def key(self) -> frozenset:
         return frozenset((self.zone1, self.zone2))
+
 
 class Drone:
     def __init__(self, drone_id: str):
         self.id = drone_id
-        self.zone: Zone | None = None
+        self.zone: Zone
         self.connection: Connection | None = None
         self.path: list[Zone] = []
         self.path_index = 0
         self.finished = False
         self.in_transit: bool = False
         self.remaining_turns: int = 0
-        self.target_zone: Zone | None = None
+        self.target_zone: Zone
         self.buffer_zone: Zone | None = None
-        self.buffer_edge: Zone | None = None
+        self.buffer_edge: frozenset | None = None
         self.just_arrived: bool = False
 
 
@@ -71,7 +72,8 @@ class Graph(BaseModel):
     start_hub: Zone
     end_hub: Zone
     drones: list[Drone] = Field(default_factory=list, exclude=True)
-    adjacency: dict[Zone, list[Zone]] = Field(default_factory=dict, exclude=True)
+    adjacency: dict[Zone, list[Zone]] = Field(
+        default_factory=dict, exclude=True)
     connection_map: dict[frozenset[Zone], Connection] = Field(
         default_factory=dict, exclude=True)
     zone_occupancy: dict[Zone, int] = Field(default_factory=dict, exclude=True)
@@ -98,12 +100,11 @@ class Graph(BaseModel):
         }
         self.link_usage = {}
 
-    def create_connections(self, name1: str, name2: str, capacity) -> Connection:
+    def create_connections(
+            self, name1: str, name2: str, capacity: int) -> Connection:
         return Connection(
-            zone1_name = name1,
-            zone2_name = name2,
-            zone1 = self.zones.get(name1),
-            zone2 = self.zones.get(name2),
+            zone1=self.zones[name1],
+            zone2=self.zones[name2],
             max_link_capacity=capacity
         )
 
