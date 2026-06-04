@@ -1,85 +1,93 @@
 import heapq
 from collections import Counter
 from models import Graph, Zone
+from typing import List, Dict, Tuple
 
 
-def dijkstra(graph: Graph,
-             start: Zone,
-             end: Zone,
-             previous_paths: list[list[Zone]]) -> list[Zone] | None:
+class Pathfinding():
+    def __init__(self) -> None:
+        self.best_path: List | None = None
 
-    edge_frequency: Counter = Counter()
+    def dijkstra(self,
+                 graph: Graph,
+                 start: Zone,
+                 end: Zone,
+                 previous_paths: List[List[Zone]]) -> List[Zone] | None:
 
-    for path in previous_paths:
-        for i in range(len(path) - 1):
-            edge = frozenset((path[i], path[i + 1]))
-            edge_frequency[edge] += 1
+        edge_frequency: Counter = Counter()
 
-    dist = {
-        z: float("inf")
-        for z in graph.zones.values()
-    }
-    prev: dict[Zone, Zone | None] = {z: None for z in graph.zones.values()}
-    dist[start] = 0
-    pq = [(0, start.name, start)]
-    while pq:
-        cost, _, node = heapq.heappop(pq)
+        for path in previous_paths:
+            for i in range(len(path) - 1):
+                edge = frozenset((path[i], path[i + 1]))
+                edge_frequency[edge] += 1
 
-        if cost > dist[node]:
-            continue
+        dist = {
+            z: float("inf")
+            for z in graph.zones.values()
+        }
+        prev: Dict[Zone, Zone | None] = {z: None for z in graph.zones.values()}
+        dist[start] = 0
+        pq: List[Tuple[float, str, Zone]] = [(0, start.name, start)]
+        while pq:
+            cost, _, node = heapq.heappop(pq)
 
-        if node == end:
-            break
-
-        for nxt in graph.adjacency[node]:
-
-            if nxt.zone_type == "blocked":
+            if cost > dist[node]:
                 continue
 
-            dx = nxt.x - node.x
-            dy = nxt.y - node.y
-            move_cost = abs(dx) + abs(dy)
+            if node == end:
+                break
 
-            if nxt.zone_type == "restricted":
-                move_cost += 2
-            elif nxt.zone_type == "priority":
-                move_cost -= 1
+            for nxt in graph.adjacency[node]:
 
-            occupancy_penalty = graph.zone_occupancy[nxt] ** 2
+                if nxt.zone_type == "blocked":
+                    continue
 
-            edge = frozenset((node, nxt))
+                dx = nxt.x - node.x
+                dy = nxt.y - node.y
+                move_cost = abs(dx) + abs(dy)
 
-            visited_penalty = edge_frequency[edge] * 5
+                if nxt.zone_type == "restricted":
+                    move_cost += 2
+                elif nxt.zone_type == "priority":
+                    move_cost -= 1
 
-            link = graph.connection_map.get(edge)
-            link_penalty = 0
+                edge = frozenset((node, nxt))
 
-            if link and graph.link_usage.get(
-              edge, 0) >= link.max_link_capacity:
-                link_penalty = 100
+                visited_penalty = edge_frequency[edge] * 10
+                length_penalty = 0.5
 
-            new_cost = (
-                cost
-                + move_cost
-                + occupancy_penalty
-                + link_penalty
-                + visited_penalty
-                )
+                link = graph.connection_map.get(edge)
+                link_penalty = 0
 
-            if new_cost < dist[nxt]:
-                dist[nxt] = new_cost
-                prev[nxt] = node
-                heapq.heappush(pq, (new_cost, nxt.name, nxt))
+                if link and graph.link_usage.get(
+                  edge, 0) >= link.max_link_capacity:
+                    link_penalty = 100
 
-    path = []
-    cur: Zone | None = end
-    while cur is not None:
-        path.append(cur)
-        cur = prev[cur]
+                new_cost = (
+                    cost
+                    + move_cost
+                    + length_penalty
+                    + link_penalty
+                    + visited_penalty
+                    )
 
-    path.reverse()
+                if new_cost < dist[nxt]:
+                    dist[nxt] = new_cost
+                    prev[nxt] = node
+                    heapq.heappush(pq, (new_cost, nxt.name, nxt))
 
-    if path[0] != start:
-        return None
+        path = []
+        cur: Zone | None = end
+        while cur is not None:
+            path.append(cur)
+            cur = prev[cur]
 
-    return path
+        path.reverse()
+
+        if path[0] != start:
+            return None
+
+        if self.best_path is None or len(path) < len(self.best_path):
+            self.best_path = path
+
+        return path

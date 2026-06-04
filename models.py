@@ -1,5 +1,5 @@
 from pydantic import BaseModel, model_validator, Field
-from typing import TypeVar, Literal
+from typing import TypeVar, Literal, List, Dict
 
 
 Z = TypeVar("Z", bound="Zone")
@@ -52,7 +52,7 @@ class Drone:
         self.id = drone_id
         self.zone: Zone
         self.connection: Connection | None = None
-        self.path: list[Zone] = []
+        self.path: List[Zone] = []
         self.path_index = 0
         self.finished = False
         self.in_transit: bool = False
@@ -66,20 +66,20 @@ class Drone:
 class Graph(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
-    zones: dict[str, Zone] = Field(default_factory=dict)
-    connections: list[Connection] = Field(default_factory=list)
+    zones: Dict[str, Zone] = Field(default_factory=dict)
+    connections: List[Connection] = Field(default_factory=list)
     drone_counter: int
     start_hub: Zone
     end_hub: Zone
-    drones: list[Drone] = Field(default_factory=list, exclude=True)
-    adjacency: dict[Zone, list[Zone]] = Field(
+    drones: List[Drone] = Field(default_factory=list, exclude=True)
+    adjacency: Dict[Zone, List[Zone]] = Field(
         default_factory=dict, exclude=True)
-    connection_map: dict[frozenset[Zone], Connection] = Field(
+    connection_map: Dict[frozenset[Zone], Connection] = Field(
         default_factory=dict, exclude=True)
-    zone_occupancy: dict[Zone, int] = Field(default_factory=dict, exclude=True)
-    link_usage: dict[frozenset[Zone], int] = Field(
+    zone_occupancy: Dict[Zone, int] = Field(default_factory=dict, exclude=True)
+    link_usage: Dict[frozenset[Zone], int] = Field(
         default_factory=dict, exclude=True)
-    restricted_buffer: dict[frozenset[Zone], int] = Field(
+    restricted_buffer: Dict[frozenset[Zone], int] = Field(
         default_factory=dict, exclude=True)
 
     @model_validator(mode="after")

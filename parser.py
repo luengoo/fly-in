@@ -1,5 +1,5 @@
 from models import Zone, Connection, Graph
-from typing import cast, Literal
+from typing import cast, Literal, List
 
 
 class Parser:
@@ -7,7 +7,7 @@ class Parser:
         self.filename = filename
 
     def parse(self) -> Graph:
-        pending_connections: list[tuple[str, str, int]] = []
+        pending_connections: List[tuple[str, str, int]] = []
         zones = {}
         drone_counter = 0
         start_hub = None
@@ -87,7 +87,7 @@ class Parser:
             main: str
             meta: str = ""
             if "[" in rest:
-                parts: list[str] = rest.split("[", 1)
+                parts: List[str] = rest.split("[", 1)
                 main = parts[0]
                 meta = parts[1].strip("]")
             else:
