@@ -23,17 +23,18 @@ class Zone(BaseModel):
     ]
 
     @field_validator("zone_type")
-    def validate_zone_type(cls, v) -> Z:
-        valid = {"normal", "restricted", "priority", "blocked"}
+    def validate_zone_type(cls, v: str) -> str:
+        valid: set[str] = {"normal", "restricted", "priority", "blocked"}
         if v not in valid:
             raise ValueError(f"zone_type must be one of {valid}, got '{v}'")
         return v
-    
+
     @field_validator("max_drones")
-    def validate_max_drones(cls, v) -> Z:
+    def validate_max_drones(cls, v: int) -> int:
         if v < 1:
             raise ValueError(f"max_drones must be >= 1, got {v}")
         return v
+
 
 class Connection(BaseModel):
     zone1: Zone
@@ -41,7 +42,7 @@ class Connection(BaseModel):
     max_link_capacity: int = 1
 
     @field_validator("max_link_capacity")
-    def validate_capacity(cls, v) -> C:
+    def validate_capacity(cls, v: int) -> int:
         if v < 1:
             raise ValueError(f"max_link_capacity must be >= 1, got {v}")
         return v

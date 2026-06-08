@@ -1,5 +1,5 @@
 from models import Zone, Connection, Graph
-from typing import cast, Literal, List
+from typing import cast, Literal, List, Dict
 
 
 class Parser:
@@ -8,7 +8,7 @@ class Parser:
 
     def parse(self) -> Graph:
         pending_connections: List[tuple[str, str, int]] = []
-        zones = {}
+        zones: Dict = {}
         drone_counter = 0
         start_hub = None
         end_hub = None
@@ -27,25 +27,33 @@ class Parser:
 
                 if isinstance(result, int):
                     if len(zones) > 0 or len(pending_connections) > 0:
-                        raise ValueError(f"Line {line_number}: nb_drones must be the first definition")
+                        raise ValueError(
+                            f"Line {line_number}: nb_drones must"
+                            " be the first definition")
                     drone_counter = result
 
                 elif isinstance(result, Zone):
                     if result.name in zones:
-                        raise ValueError(f"Line {line_number}: Duplicate zone name: '{result.name}'")
+                        raise ValueError(
+                            f"Line {line_number}: Duplicate zone name:"
+                            f"'{result.name}'")
                     zones[result.name] = result
 
                     if result.hub_type == "start_hub":
                         start_hub = result
                         if seen_start:
-                            raise ValueError(f"Line {line_number}: Can't have two start_hubs")
+                            raise ValueError(
+                                f"Line {line_number}:"
+                                f"Can't have two start_hubs")
                         else:
                             seen_start = True
 
                     elif result.hub_type == "end_hub":
                         end_hub = result
                         if seen_end:
-                            raise ValueError(f"Line {line_number}: Can't have two end_hubs")
+                            raise ValueError(
+                                f"Line {line_number}:"
+                                "Can't have two end_hubs")
                         else:
                             seen_end = True
 
@@ -53,17 +61,26 @@ class Parser:
                     zone1_name, zone2_name, capacity = result
 
                     if zone1_name not in zones:
-                        raise ValueError(f"Line {line_number}: Connection references undefined zone: '{zone1_name}'")
+                        raise ValueError(
+                            f"Line {line_number}:"
+                            "Connection references undefined zone:"
+                            f"'{zone1_name}'")
                     if zone2_name not in zones:
-                        raise ValueError(f"Line {line_number}: Connection references undefined zone: '{zone2_name}'")
+                        raise ValueError(
+                            f"Line {line_number}:"
+                            "Connection references undefined zone:"
+                            f" '{zone2_name}'")
 
                     pair = frozenset({zone1_name, zone2_name})
                     if pair in seen_connections:
-                        raise ValueError(f"Line {line_number}: Duplicated connection between"
+                        raise ValueError(
+                            f"Line {line_number}: "
+                            "Duplicated connection between"
                             f"'{zone1_name} and {zone2_name}'"
                         )
                     seen_connections.add(pair)
-                    pending_connections.append(cast(tuple[str, str, int], result))
+                    pending_connections.append(
+                        cast(tuple[str, str, int], result))
 
         if start_hub is None or end_hub is None:
             raise ValueError("Missing start_hub or end_hub")
@@ -71,12 +88,10 @@ class Parser:
         connections = []
 
         for zone1_name, zone2_name, capacity in pending_connections:
-            zone1 = zones.get(zone1_name)
-            zone2 = zones.get(zone2_name)
             connections.append(
                 Connection(
-                    zone1=zone1,
-                    zone2=zone2,
+                    zone1=zones[zone1_name],
+                    zone2=zones[zone2_name],
                     max_link_capacity=capacity
                 )
             )
@@ -130,14 +145,17 @@ class Parser:
                 if meta:
                     for item in meta.split():
                         if "=" not in item:
-                            raise ValueError(f"Invalid metadata format '{item}', expected key=value")
+                            raise ValueError(
+                                f"Invalid metadata format '{item}'"
+                                ", expected key=value")
                         key, value = item.split("=", 1)
                         if key not in VALID_ZONE_KEYS:
                             raise ValueError(f"Unknown metadata key '{key}'")
                         meta_dict[key] = value
                 parts = main.split()
                 if len(parts) != 3:
-                    raise ValueError(f"Invalid zone name (got: '{main.strip()}')")
+                    raise ValueError(
+                        f"Invalid zone name (got: '{main.strip()}')")
                 name = parts[0]
                 x = int(parts[1])
                 y = int(parts[2])
@@ -174,11 +192,12 @@ class Parser:
                         raise ValueError(f"Invalid metadata format '{item}'")
                     key, value = item.split("=", 1)
                     if key not in VALID_CONNECTION_KEYS:
-                        raise ValueError(f"Unknown connection metadata key '{key}'")
+                        raise ValueError(
+                            f"Unknown connection metadata key '{key}'")
                 try:
                     capacity = int(meta.split("=")[1])
                 except ValueError:
-                    raise ValueError(f"max_link_capacity must be an integer")
+                    raise ValueError("max_link_capacity must be an integer")
             else:
                 main = rest
 

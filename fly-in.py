@@ -1,6 +1,5 @@
 from sys import argv
 from parser import Parser
-from pydantic import ValidationError
 from simulation import Simulation
 
 
@@ -20,7 +19,7 @@ def main() -> None:
             simulation = Simulation()
             simulation.simulate(graph)
         except Exception as e:
-           print(f"Something went wrong in the simulation: {e}") 
+            print(f"Something went wrong in the simulation: {e}")
 
 
 if __name__ == "__main__":
