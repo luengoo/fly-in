@@ -12,9 +12,12 @@ class Parser:
         drone_counter = 0
         start_hub = None
         end_hub = None
+        seen_start = False
+        seen_end = False
+        seen_connections: set[frozenset] = set()
 
         with open(self.filename, "r") as file:
-            for line in file:
+            for line_number, line in enumerate(file, start=1):
                 line = line.strip()
 
                 if not line or line.startswith("#"):
@@ -23,19 +26,44 @@ class Parser:
                 result = self.parse_line(line)
 
                 if isinstance(result, int):
+                    if len(zones) > 0 or len(pending_connections) > 0:
+                        raise ValueError(f"Line {line_number}: nb_drones must be the first definition")
                     drone_counter = result
 
                 elif isinstance(result, Zone):
+                    if result.name in zones:
+                        raise ValueError(f"Line {line_number}: Duplicate zone name: '{result.name}'")
                     zones[result.name] = result
 
                     if result.hub_type == "start_hub":
                         start_hub = result
+                        if seen_start:
+                            raise ValueError(f"Line {line_number}: Can't have two start_hubs")
+                        else:
+                            seen_start = True
+
                     elif result.hub_type == "end_hub":
                         end_hub = result
+                        if seen_end:
+                            raise ValueError(f"Line {line_number}: Can't have two end_hubs")
+                        else:
+                            seen_end = True
 
-                else:
-                    pending_connections.append(cast(
-                        tuple[str, str, int], result))
+                elif isinstance(result, tuple):
+                    zone1_name, zone2_name, capacity = result
+
+                    if zone1_name not in zones:
+                        raise ValueError(f"Line {line_number}: Connection references undefined zone: '{zone1_name}'")
+                    if zone2_name not in zones:
+                        raise ValueError(f"Line {line_number}: Connection references undefined zone: '{zone2_name}'")
+
+                    pair = frozenset({zone1_name, zone2_name})
+                    if pair in seen_connections:
+                        raise ValueError(f"Line {line_number}: Duplicated connection between"
+                            f"'{zone1_name} and {zone2_name}'"
+                        )
+                    seen_connections.add(pair)
+                    pending_connections.append(cast(tuple[str, str, int], result))
 
         if start_hub is None or end_hub is None:
             raise ValueError("Missing start_hub or end_hub")
@@ -45,8 +73,6 @@ class Parser:
         for zone1_name, zone2_name, capacity in pending_connections:
             zone1 = zones.get(zone1_name)
             zone2 = zones.get(zone2_name)
-            if not zone1 or not zone2:
-                raise ValueError("Invalid connection")
             connections.append(
                 Connection(
                     zone1=zone1,
@@ -75,11 +101,18 @@ class Parser:
             "priority": "green",
             "blocked": "gray"
         }
+        VALID_ZONE_KEYS = {"zone", "color", "max_drones"}
+        VALID_CONNECTION_KEYS = {"max_link_capacity"}
 
         meta_dict = {}
 
         if line.startswith("nb_drones"):
-            return int(line.split(":")[1].strip())
+            try:
+                result = int(line.split(":")[1].strip())
+            except Exception:
+                raise ValueError(
+                    "nb_drones must be: 'nb_drones: x'. Check the .txt file")
+            return result
 
         if line.startswith(("start_hub", "end_hub", "hub")):
             prefix, rest = line.split(":", 1)
@@ -93,16 +126,26 @@ class Parser:
             else:
                 main = rest
                 meta = ""
-
-            parts = main.split()
-            name = parts[0]
-            x = int(parts[1])
-            y = int(parts[2])
-
-            if meta:
-                for item in meta.split():
-                    key, value = item.split("=")
-                    meta_dict[key] = value
+            try:
+                if meta:
+                    for item in meta.split():
+                        if "=" not in item:
+                            raise ValueError(f"Invalid metadata format '{item}', expected key=value")
+                        key, value = item.split("=", 1)
+                        if key not in VALID_ZONE_KEYS:
+                            raise ValueError(f"Unknown metadata key '{key}'")
+                        meta_dict[key] = value
+                parts = main.split()
+                if len(parts) != 3:
+                    raise ValueError(f"Invalid zone name (got: '{main.strip()}')")
+                name = parts[0]
+                x = int(parts[1])
+                y = int(parts[2])
+                if '-' in name or ' ' in name:
+                    raise ValueError(
+                        f"Zone name '{name}' can't have dashes")
+            except Exception as e:
+                raise ValueError(f"Invalid value: {e}.")
 
             zone_type = meta_dict.get("zone", "normal")
             hub_type = cast(Literal["hub", "start_hub", "end_hub"], prefix)
@@ -126,17 +169,23 @@ class Parser:
             if "[" in rest:
                 main, meta = rest.split("[", 1)
                 meta = meta.strip("]")
-                capacity = int(meta.split("=")[1])
+                for item in meta.split():
+                    if "=" not in item:
+                        raise ValueError(f"Invalid metadata format '{item}'")
+                    key, value = item.split("=", 1)
+                    if key not in VALID_CONNECTION_KEYS:
+                        raise ValueError(f"Unknown connection metadata key '{key}'")
+                try:
+                    capacity = int(meta.split("=")[1])
+                except ValueError:
+                    raise ValueError(f"max_link_capacity must be an integer")
             else:
                 main = rest
 
             try:
-                zone1: str
-                zone2: str
                 zone1, zone2 = main.strip().split("-", 1)
             except ValueError:
-                raise ValueError(
-                    "connection name cannot contain '-' characters")
+                raise ValueError("Connection must have format 'zone1-zone2'")
 
             return (zone1, zone2, capacity)
         return None

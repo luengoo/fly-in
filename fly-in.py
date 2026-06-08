@@ -11,17 +11,16 @@ def main() -> None:
         return
     else:
         try:
-            simulation = Simulation()
             graph = Parser(argv[1]).parse()
-            simulation.simulate(graph)
 
-        except (ValueError, ValidationError) as e:
-            if isinstance(e, ValidationError):
-                print(f"Error during parsing: {e}")
-                return
-            else:
-                print(f"Error during parsing {e}")
-                return
+        except Exception as e:
+            print(f"Error during parsing {e}")
+            return
+        try:
+            simulation = Simulation()
+            simulation.simulate(graph)
+        except Exception as e:
+           print(f"Something went wrong in the simulation: {e}") 
 
 
 if __name__ == "__main__":
